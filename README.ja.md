@@ -1,16 +1,23 @@
-# Gemini Slack Bot for GAS
-
-<p align="center">
+<div align="center">
   <img src="./assets/gemini-slack-bot.svg" alt="Gemini Slack Bot icon" width="180">
-</p>
+  <h1>Gemini Slack Bot for GAS</h1>
+  <p>Google Apps Script だけで動く、Gemini 連携の Slack Events API Bot です。公開チャンネル向けにマルチモーダルな返信フローを構築できます。</p>
+</div>
 
 <p align="center">
-  <a href="./README.md">English README</a>
   <a href="https://github.com/Sunwood-ai-labs/gas-slack-bot-gemini/actions/workflows/ci.yml">
     <img src="https://github.com/Sunwood-ai-labs/gas-slack-bot-gemini/actions/workflows/ci.yml/badge.svg" alt="CI">
   </a>
   <a href="./LICENSE">
     <img src="https://img.shields.io/badge/license-ISC-0f766e.svg" alt="ISC License">
+  </a>
+  <img src="https://img.shields.io/badge/platform-Google%20Apps%20Script-4285F4.svg" alt="Google Apps Script">
+  <img src="https://img.shields.io/badge/AI-Gemini-8E75FF.svg" alt="Gemini">
+</p>
+
+<p align="center">
+  <a href="./README.md">
+    <img src="https://img.shields.io/badge/Language-English-2563EB.svg" alt="English README">
   </a>
 </p>
 
@@ -25,7 +32,7 @@ Google Apps Script だけで動かせる Slack Events API Bot です。公開チ
 - 明示がなければ日本語で自然に返信
 - Apps Script の `Script Properties` によるシークレット管理
 
-## クイックスタート
+## 🚀 クイックスタート
 
 1. 依存関係をインストールします。
 
@@ -46,7 +53,7 @@ npx clasp push
 7. [`slack-app-manifest.json`](./slack-app-manifest.json) 内の `__REQUEST_URL__` を置き換えて Slack に import するか、同等の設定を手動で行います。
 8. Slack で Event Subscriptions を有効化し、Request URL に `/exec` URL を設定して、Bot を公開チャンネルへ招待し、メンションして動作確認します。
 
-## Script Properties
+## 🔐 Script Properties
 
 必須:
 
@@ -71,7 +78,7 @@ npx clasp push
 | `GEMINI_MAX_TEXT_FILE_BYTES` | `1048576` | ダウンロード対象にするテキスト添付の最大サイズ |
 | `GEMINI_MAX_TEXT_FILE_CHARS` | `12000` | 1 ファイルから Gemini に渡す最大文字数 |
 
-## 対応添付ファイル
+## 📎 対応添付ファイル
 
 | 種別 | MIME types | 処理内容 |
 | --- | --- | --- |
@@ -83,14 +90,14 @@ npx clasp push
 
 `docx` や `xlsx` のようなバイナリ Office ファイルは現在スキップされます。
 
-## 動作の流れ
+## 🧱 動作の流れ
 
 1. Slack から Apps Script Web アプリへイベントが送信されます。
 2. [`Code.js`](./Code.js) が verification token、任意の team/app 制限、メンション条件を確認します。
 3. 対応ファイルは Gemini Files API へアップロードするか、テキストとして直接埋め込みます。
 4. Gemini が応答を生成し、Bot が Slack スレッドに返信します。
 
-## Slack App 設定
+## 🛠 Slack App 設定
 
 同梱の [`slack-app-manifest.json`](./slack-app-manifest.json) は、そのまま編集して使えるテンプレートです。最低限、次の設定が必要です。
 
@@ -99,7 +106,7 @@ npx clasp push
 
 manifest を import する前に `__REQUEST_URL__` をデプロイ済み Apps Script の `/exec` URL に置き換えてください。
 
-## リポジトリ構成
+## 🗂 リポジトリ構成
 
 ```text
 .
@@ -112,19 +119,19 @@ manifest を import する前に `__REQUEST_URL__` をデプロイ済み Apps Sc
 `-- .github/workflows/ci.yml
 ```
 
-## 検証コマンド
+## ✅ 検証コマンド
 
 - `npm run check` で `Code.js` の構文と 2 つの JSON manifest を検証
 - `npm run clasp:push` で Apps Script に反映
 - `npm run clasp:open` で関連付け済み Apps Script プロジェクトを開く
 
-## 補足
+## ⚠️ 補足
 
 - GAS Web アプリでは Slack の signing headers を通常どおり扱いにくいため、この実装では verification token を使っています。
 - 返信対象は `message.channels` を購読した公開チャンネルに限定されます。
 - テキストがなくても、対応添付ファイルだけで解析して返答できます。
 - 一部の添付が処理できなかった場合は、Gemini の返答前に短い skipped-file 通知を追加します。
 
-## ライセンス
+## 📄 ライセンス
 
 ISC License の下で公開しています。詳細は [`LICENSE`](./LICENSE) を参照してください。
