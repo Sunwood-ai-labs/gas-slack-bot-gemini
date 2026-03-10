@@ -398,31 +398,51 @@ function normalizeSlackFile_(file) {
 
 function normalizeMimeType_(mimeType, filetype, name) {
   const normalized = String(mimeType || '').toLowerCase();
-  if (normalized) {
+  const extension = getFileExtension_(name || filetype || '');
+  const inferred = inferMimeTypeFromExtension_(extension);
+
+  // Slack sometimes uploads text files like README.md as hosted binaries
+  // with application/octet-stream. Prefer a known text/media type from the
+  // filename extension in that case so the bot can still inspect the file.
+  if (normalized && normalized !== 'application/octet-stream') {
     return normalized;
   }
 
-  const extension = getFileExtension_(name || filetype || '');
-  if (extension === 'md' || extension === 'markdown') {
-    return 'text/markdown';
-  }
-  if (extension === 'json') {
-    return 'application/json';
-  }
-  if (extension === 'csv') {
-    return 'text/csv';
-  }
-  if (extension === 'ts' || extension === 'js' || extension === 'jsx' || extension === 'tsx' || extension === 'py') {
-    return 'text/plain';
-  }
-  if (extension === 'pdf') {
-    return 'application/pdf';
-  }
-  if (extension === 'txt') {
-    return 'text/plain';
+  if (inferred) {
+    return inferred;
   }
 
   return 'application/octet-stream';
+}
+
+function inferMimeTypeFromExtension_(extension) {
+  const value = String(extension || '').toLowerCase();
+  if (value === 'md' || value === 'markdown') {
+    return 'text/markdown';
+  }
+  if (value === 'json') {
+    return 'application/json';
+  }
+  if (value === 'xml') {
+    return 'application/xml';
+  }
+  if (value === 'yaml' || value === 'yml') {
+    return 'application/x-yaml';
+  }
+  if (value === 'csv') {
+    return 'text/csv';
+  }
+  if (value === 'txt' || value === 'log') {
+    return 'text/plain';
+  }
+  if (value === 'js' || value === 'jsx' || value === 'ts' || value === 'tsx' || value === 'py' || value === 'java' || value === 'go' || value === 'rb' || value === 'sh') {
+    return 'text/plain';
+  }
+  if (value === 'pdf') {
+    return 'application/pdf';
+  }
+
+  return '';
 }
 
 function getFileExtension_(name) {
