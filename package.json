@@ -1,10 +1,12 @@
 {
   "name": "gas-slack-bot-gemini",
   "version": "1.0.0",
-  "description": "Gemini-powered Slack bot on Google Apps Script with attachment support",
+  "description": "Google Apps Script Slack bot powered by Gemini for multimodal channel replies and file analysis",
   "main": "Code.js",
   "scripts": {
-    "check": "node --check Code.js",
+    "check": "npm run check:js && npm run check:json",
+    "check:js": "node --check Code.js",
+    "check:json": "node -e \"const fs = require('node:fs'); ['appsscript.json', 'slack-app-manifest.json'].forEach((file) => JSON.parse(fs.readFileSync(file, 'utf8'))); console.log('JSON manifests are valid.');\"",
     "clasp:login": "clasp login",
     "clasp:create": "clasp create --type standalone --title \"Gemini Slack Bot\"",
     "clasp:push": "clasp push",
@@ -18,6 +20,14 @@
     "gemini",
     "multimodal"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Sunwood-ai-labs/gas-slack-bot-gemini.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Sunwood-ai-labs/gas-slack-bot-gemini/issues"
+  },
+  "homepage": "https://github.com/Sunwood-ai-labs/gas-slack-bot-gemini#readme",
   "author": "",
   "license": "ISC",
   "type": "commonjs",
