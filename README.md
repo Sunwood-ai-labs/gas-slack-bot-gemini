@@ -102,7 +102,7 @@ Binary Office files such as `docx` and `xlsx` are currently skipped.
 
 The included [`slack-app-manifest.json`](./slack-app-manifest.json) is a ready-to-edit template. At minimum, your Slack app needs:
 
-- Bot scopes: `chat:write`, `channels:history`, `files:read`
+- Bot scopes: `chat:write`, `channels:history`, `files:read`, `reactions:write`
 - Bot events: `message.channels`, `file_shared`
 
 Replace `__REQUEST_URL__` with your deployed Apps Script `/exec` URL before importing the manifest.

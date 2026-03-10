@@ -101,7 +101,7 @@ npx clasp push
 
 同梱の [`slack-app-manifest.json`](./slack-app-manifest.json) は、そのまま編集して使えるテンプレートです。最低限、次の設定が必要です。
 
-- Bot scopes: `chat:write`, `channels:history`, `files:read`
+- Bot scopes: `chat:write`, `channels:history`, `files:read`, `reactions:write`
 - Bot events: `message.channels`, `file_shared`
 
 manifest を import する前に `__REQUEST_URL__` をデプロイ済み Apps Script の `/exec` URL に置き換えてください。

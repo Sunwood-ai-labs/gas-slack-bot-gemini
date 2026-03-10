@@ -78,8 +78,7 @@ function handleMessageEvent_(payload, event) {
     return;
   }
 
-  const replyText = generateGeminiReply_(requestContext);
-  postSlackReply_(requestContext, replyText);
+  processRequestContext_(requestContext);
 }
 
 function handleFileSharedEvent_(payload, event) {
@@ -119,8 +118,7 @@ function handleFileSharedEvent_(payload, event) {
     return;
   }
 
-  const replyText = generateGeminiReply_(requestContext);
-  postSlackReply_(requestContext, replyText);
+  processRequestContext_(requestContext);
 }
 
 function buildRequestContext_(payload, event, providedFiles) {
@@ -164,12 +162,26 @@ function buildRequestContext_(payload, event, providedFiles) {
     payload: payload,
     event: event,
     channel: event.channel,
+    messageTs: event.ts || '',
     threadTs: event.thread_ts || event.ts || '',
     userId: event.user || '',
     promptText: effectivePrompt,
     supportedFiles: supportedFiles,
     skippedFiles: skippedFiles,
   };
+}
+
+function processRequestContext_(requestContext) {
+  const reactionState = markSlackProcessing_(requestContext);
+
+  try {
+    const replyText = generateGeminiReply_(requestContext);
+    postSlackReply_(requestContext, replyText);
+    markSlackSuccess_(requestContext, reactionState);
+  } catch (error) {
+    markSlackFailure_(requestContext, reactionState);
+    throw error;
+  }
 }
 
 function shouldReplyToEvent_(event, fileCount) {
@@ -693,6 +705,61 @@ function postSlackReply_(requestContext, text) {
   callSlackApiJson_('chat.postMessage', payload);
 }
 
+function markSlackProcessing_(requestContext) {
+  const state = { pending: false };
+  if (!canReactToSlackMessage_(requestContext)) {
+    return state;
+  }
+
+  state.pending = callSlackReactionSafe_('reactions.add', {
+    channel: requestContext.channel,
+    timestamp: requestContext.messageTs,
+    name: 'hourglass_flowing_sand',
+  });
+
+  return state;
+}
+
+function markSlackSuccess_(requestContext, reactionState) {
+  if (!canReactToSlackMessage_(requestContext)) {
+    return;
+  }
+
+  if (reactionState && reactionState.pending) {
+    callSlackReactionSafe_('reactions.remove', {
+      channel: requestContext.channel,
+      timestamp: requestContext.messageTs,
+      name: 'hourglass_flowing_sand',
+    });
+  }
+
+  callSlackReactionSafe_('reactions.add', {
+    channel: requestContext.channel,
+    timestamp: requestContext.messageTs,
+    name: 'white_check_mark',
+  });
+}
+
+function markSlackFailure_(requestContext, reactionState) {
+  if (!canReactToSlackMessage_(requestContext)) {
+    return;
+  }
+
+  if (reactionState && reactionState.pending) {
+    callSlackReactionSafe_('reactions.remove', {
+      channel: requestContext.channel,
+      timestamp: requestContext.messageTs,
+      name: 'hourglass_flowing_sand',
+    });
+  }
+
+  callSlackReactionSafe_('reactions.add', {
+    channel: requestContext.channel,
+    timestamp: requestContext.messageTs,
+    name: 'x',
+  });
+}
+
 function postFailureNotice_(event, error) {
   const channel = event && (event.channel || event.channel_id);
   if (!channel || !isAllowedChannel_(channel)) {
@@ -773,6 +840,25 @@ function callSlackApiForm_(method, payload) {
   return parseSlackApiResponse_(method, response);
 }
 
+function callSlackReactionSafe_(method, payload) {
+  try {
+    callSlackApiForm_(method, payload);
+    return true;
+  } catch (error) {
+    const message = String(error && error.message ? error.message : error || '');
+    if (message.indexOf('already_reacted') >= 0 ||
+        message.indexOf('no_reaction') >= 0 ||
+        message.indexOf('missing_scope') >= 0 ||
+        message.indexOf('not_reactable') >= 0 ||
+        isQuotaExceededError_(error)) {
+      console.warn('[slack-reaction] %s', message);
+      return false;
+    }
+
+    throw error;
+  }
+}
+
 function parseSlackApiResponse_(method, response) {
   const statusCode = response.getResponseCode();
   const bodyText = response.getContentText();
@@ -789,6 +875,14 @@ function buildSlackAuthHeaders_() {
   return {
     Authorization: 'Bearer ' + getRequiredProperty_('SLACK_BOT_TOKEN'),
   };
+}
+
+function canReactToSlackMessage_(requestContext) {
+  return Boolean(
+    requestContext &&
+    requestContext.channel &&
+    requestContext.messageTs
+  );
 }
 
 function buildSlackDownloadHeaders_(extraHeaders) {

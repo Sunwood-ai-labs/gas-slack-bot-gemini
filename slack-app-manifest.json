@@ -13,7 +13,8 @@
       "bot": [
         "chat:write",
         "channels:history",
-        "files:read"
+        "files:read",
+        "reactions:write"
       ]
     }
   },
