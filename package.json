@@ -1,0 +1,27 @@
+{
+  "name": "gas-slack-bot-gemini",
+  "version": "1.0.0",
+  "description": "Gemini-powered Slack bot on Google Apps Script with attachment support",
+  "main": "Code.js",
+  "scripts": {
+    "check": "node --check Code.js",
+    "clasp:login": "clasp login",
+    "clasp:create": "clasp create --type standalone --title \"Gemini Slack Bot\"",
+    "clasp:push": "clasp push",
+    "clasp:open": "clasp open"
+  },
+  "keywords": [
+    "gas",
+    "google-apps-script",
+    "slack",
+    "bot",
+    "gemini",
+    "multimodal"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@google/clasp": "^3.2.0"
+  }
+}
