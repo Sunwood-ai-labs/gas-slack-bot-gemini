@@ -1,10 +1,11 @@
 const DEFAULT_ALLOWED_CHANNEL_ID = 'C0000000000';
 const DEFAULT_ALLOWED_TEAM_ID = 'T0000000000';
 const DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash';
-const DEFAULT_MAX_MEDIA_FILE_BYTES = 20 * 1024 * 1024;
-const DEFAULT_MAX_TEXT_FILE_BYTES = 1024 * 1024;
-const DEFAULT_MAX_TEXT_FILE_CHARS = 12000;
-const DEFAULT_MAX_ATTACHMENTS = 4;
+const DEFAULT_MAX_MEDIA_FILE_BYTES = 8 * 1024 * 1024;
+const DEFAULT_MAX_TEXT_FILE_BYTES = 256 * 1024;
+const DEFAULT_MAX_TEXT_FILE_CHARS = 4000;
+const DEFAULT_MAX_ATTACHMENTS = 2;
+const DEFAULT_SLACK_REPLY_MAX_CHARS = 1500;
 const DEFAULT_REQUIRE_MENTION = true;
 const EVENT_CACHE_TTL_SECONDS = 60 * 10;
 const FILE_RESPONSE_CACHE_TTL_SECONDS = 60;
@@ -60,7 +61,9 @@ function handleEventCallback_(payload) {
     }
   } catch (error) {
     console.error('[event] %s\n%s', error.message, error.stack || '');
-    postFailureNotice_(event, error);
+    if (!isQuotaExceededError_(error)) {
+      postFailureNotice_(event, error);
+    }
     throw error;
   }
 }
@@ -276,6 +279,7 @@ function buildGeminiInstructionText_(requestContext) {
   const lines = [
     'You are a helpful Slack assistant powered by Gemini.',
     'Reply in natural Japanese unless the user clearly asks for another language.',
+    'Keep the final Slack answer concise and practical.',
     'Use the attached files and images as primary evidence when they are relevant.',
     'If a file could not be fully inspected, say so briefly and continue with the best available answer.',
     '',
@@ -579,17 +583,17 @@ function getGeminiFileState_(resource) {
 }
 
 function downloadSlackTextFile_(file) {
-  if (file.size > getMaxTextFileBytes_()) {
-    throw new Error('Text attachment is too large to inline: ' + summarizeSlackFile_(file));
-  }
+  const byteLimit = getMaxTextFileBytes_();
 
   const response = UrlFetchApp.fetch(file.urlPrivateDownload, {
     method: 'get',
-    headers: buildSlackAuthHeaders_(),
+    headers: buildSlackDownloadHeaders_({
+      Range: 'bytes=0-' + Math.max(0, byteLimit - 1),
+    }),
     muteHttpExceptions: true,
   });
 
-  if (response.getResponseCode() !== 200) {
+  if (response.getResponseCode() !== 200 && response.getResponseCode() !== 206) {
     throw new Error('Failed to download text attachment: ' + file.name);
   }
 
@@ -753,6 +757,19 @@ function buildSlackAuthHeaders_() {
   return {
     Authorization: 'Bearer ' + getRequiredProperty_('SLACK_BOT_TOKEN'),
   };
+}
+
+function buildSlackDownloadHeaders_(extraHeaders) {
+  const headers = buildSlackAuthHeaders_();
+  const extras = extraHeaders || {};
+
+  for (const key in extras) {
+    if (Object.prototype.hasOwnProperty.call(extras, key)) {
+      headers[key] = extras[key];
+    }
+  }
+
+  return headers;
 }
 
 function verifyPayload_(payload) {
@@ -959,7 +976,7 @@ function summarizeSlackFile_(file) {
 }
 
 function truncateSlackText_(text) {
-  return truncateText_(text, 3500);
+  return truncateText_(text, getSlackReplyMaxChars_());
 }
 
 function truncateText_(text, maxChars) {
@@ -986,6 +1003,17 @@ function findHeaderValue_(response, headerName) {
 
 function normalizeText_(text) {
   return String(text || '').trim();
+}
+
+function getSlackReplyMaxChars_() {
+  return getNumericProperty_('SLACK_REPLY_MAX_CHARS', DEFAULT_SLACK_REPLY_MAX_CHARS);
+}
+
+function isQuotaExceededError_(error) {
+  const message = String(error && error.message ? error.message : error || '');
+  return message.indexOf('Bandwidth quota exceeded') >= 0 ||
+    message.indexOf('Service invoked too many times') >= 0 ||
+    message.indexOf('Limit exceeded') >= 0;
 }
 
 function jsonOutput_(value) {

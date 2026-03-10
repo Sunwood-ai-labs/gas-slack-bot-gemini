@@ -73,10 +73,11 @@ Optional properties:
 | `SLACK_BOT_USER_ID` | auto-detected | Skip the `auth.test` lookup and stabilize mention detection |
 | `SLACK_REQUIRE_MENTION` | `true` | Set to `false` to answer every eligible public-channel message |
 | `GEMINI_MODEL` | `gemini-2.5-flash` | Gemini model used for replies |
-| `GEMINI_MAX_ATTACHMENTS` | `4` | Maximum number of attachments processed per message |
-| `GEMINI_MAX_MEDIA_FILE_BYTES` | `20971520` | Maximum size for image, PDF, audio, and video files |
-| `GEMINI_MAX_TEXT_FILE_BYTES` | `1048576` | Maximum size for textual attachments before download |
-| `GEMINI_MAX_TEXT_FILE_CHARS` | `12000` | Maximum extracted text sent to Gemini from one text file |
+| `GEMINI_MAX_ATTACHMENTS` | `2` | Maximum number of attachments processed per message |
+| `GEMINI_MAX_MEDIA_FILE_BYTES` | `8388608` | Maximum size for image, PDF, audio, and video files |
+| `GEMINI_MAX_TEXT_FILE_BYTES` | `262144` | Maximum number of bytes fetched from one textual attachment |
+| `GEMINI_MAX_TEXT_FILE_CHARS` | `4000` | Maximum extracted text sent to Gemini from one text file |
+| `SLACK_REPLY_MAX_CHARS` | `1500` | Maximum reply length sent back to Slack |
 
 ## 📎 Supported Attachments
 
