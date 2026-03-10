@@ -280,6 +280,10 @@ function buildGeminiInstructionText_(requestContext) {
     'You are a helpful Slack assistant powered by Gemini.',
     'Reply in natural Japanese unless the user clearly asks for another language.',
     'Keep the final Slack answer concise and practical.',
+    'Format for Slack, not generic Markdown.',
+    'Do not use Markdown headings like #, ##, or ###, and do not use tables.',
+    'Prefer this structure: one short summary sentence, blank line, *bold section labels*, and bullets starting with "•".',
+    'Avoid decorative formatting and keep spacing clean.',
     'Use the attached files and images as primary evidence when they are relevant.',
     'If a file could not be fully inspected, say so briefly and continue with the best available answer.',
     '',
@@ -649,9 +653,17 @@ function extractGeminiText_(response) {
 }
 
 function postSlackReply_(requestContext, text) {
+  const formattedText = formatSlackReply_(text);
   const payload = {
     channel: requestContext.channel,
-    text: truncateSlackText_(text),
+    text: truncateSlackText_(formattedText),
+    blocks: [{
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: truncateSlackText_(formattedText),
+      },
+    }],
   };
 
   if (requestContext.threadTs) {
@@ -973,6 +985,42 @@ function getOptionalProperty_(name) {
 
 function summarizeSlackFile_(file) {
   return file.name + ' [' + file.mimeType + ', ' + file.size + ' bytes]';
+}
+
+function formatSlackReply_(text) {
+  const lines = String(text || '')
+    .replace(/\r\n/g, '\n')
+    .replace(/\u00a0/g, ' ')
+    .replace(/[ \t]+\n/g, '\n')
+    .split('\n');
+
+  const normalized = [];
+  let previousBlank = false;
+
+  for (let i = 0; i < lines.length; i += 1) {
+    let line = lines[i].trim();
+
+    if (!line) {
+      if (!previousBlank && normalized.length) {
+        normalized.push('');
+      }
+      previousBlank = true;
+      continue;
+    }
+
+    line = line
+      .replace(/^#{1,6}\s+(.+)$/, '*$1*')
+      .replace(/^\*\s+\*\*(.+?)\*\*\s*:\s*/, '• *$1*: ')
+      .replace(/^\*\s+\*\*(.+?)\*\*\s*$/, '• *$1*')
+      .replace(/^[-*]\s+/, '• ')
+      .replace(/^(\d+)\)\s+/, '$1. ')
+      .replace(/[ \t]{2,}/g, ' ');
+
+    normalized.push(line);
+    previousBlank = false;
+  }
+
+  return normalized.join('\n').trim();
 }
 
 function truncateSlackText_(text) {
